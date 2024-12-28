@@ -1,0 +1,81 @@
+/*
+Last modifiied : 12/28/24
+Project: Building a pomodoro timer for the desk that uses the screaming goat sound when the 25 min timer goes off
+Tools/skills used:
+- CAD
+- Arduino
+- electrical prototyping
+- Github
+- C/C++
+- Arduino IDE
+- 3d Printer
+
+List for MVP:
+- reset button for count, start/stop
+- 25 min timer then 5 min down time
+- After 4 cycles, do 25 min timer
+- count for pomodoros
+- built in clock of the time 
+- LCD display
+- display on top LCD what cycle currently in
+*/
+
+//Library imports
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+
+// Global Constants
+const int pomoTimer = 25;
+const int pomoBreak = 5;
+
+// Global Varibles
+int count, flag;
+bool startButton, breakButton;
+
+// Create an LCD object. The parameters are (I2C address, width, height).
+LiquidCrystal_I2C lcd(0x27, 16, 2);  
+
+void setup() {
+  count = 0; // set the initial count to 0.
+  flag = -1;
+  startButton = false;
+  breakButton = false; // set back to false when button functionatality is implemented
+  lcd.begin();
+  lcd.backlight();   // Turn on the backlight
+  lcd.setCursor(0, 0); // Set the cursor to the first column of the first row
+  lcd.print("Pomodoro Timer"); // Opening message
+  delay(2000);
+  lcd.clear();
+}
+
+void loop() {
+
+  if(count != flag){
+    lcd.print("Pomo count: ");
+    lcd.print(count);
+    flag = count;
+  }
+
+  if(startButton){
+    for(int i = 7; i>=0;i--){
+      delay(1000);
+      lcd.clear();
+      lcd.print("Time Left: ");
+      lcd.print(i);
+    }
+    delay(1000);
+    lcd.clear();
+    count++;
+    // startButton = false; comented out for testing
+  } else if (breakButton){
+      for(int i = 5; i>=0;i--){
+        delay(1000);
+        lcd.clear();
+        lcd.print("Time Left: ");
+        lcd.print(i);
+      }
+      delay(1000);
+      lcd.clear();
+  }
+ 
+}
