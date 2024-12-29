@@ -4,7 +4,6 @@ TODO LIST:
 - Implement button to start the cycle
 - see about implementng the goat scream.
 - make function for time count downs
-- 
 
 Last modifiied : 12/28/24
 Project: Building a pomodoro timer for the desk that uses the screaming goat sound when the 25 min timer goes off
@@ -30,10 +29,11 @@ List for MVP:
 //Library imports
 #include <LiquidCrystal_I2C.h>
 
+void timerFunction(int, bool);
+
 // Global Constants
 const int pomoTimerMin = 24;
 const int pomoBreakMin = 4;
-const int pomoSecs = 59;
 const int standardDelay = 1000;
 
 // Global Varibles
@@ -64,19 +64,32 @@ void setup() {
 
 void loop() {
 
-  digitalWrite(8, HIGH);
-  delay(standardDelay);
-  digitalWrite(8, LOW);
-
   if(count != flag){
     lcd.print("Pomo count: " + String(count));
     delay(standardDelay); // Remove after go button functionality added
     flag = count;
   }
 
-  if(startCycle){
-    lcd.clear();
-    for(int i = 24; i>=0;i--){
+  if(count==4){
+
+    timerFunction(pomoTimerMin, true);
+    count = 0;
+
+  } else if (startCycle){
+
+    timerFunction(pomoTimerMin, false);
+    count++;
+
+  } else {
+
+    timerFunction(pomoBreakMin, true);
+  
+  }
+}  
+
+void timerFunction(int timer_, bool cycle_){
+  lcd.clear();
+    for(int i = timer_; i>=0;i--){
       for(int j = 59; j >= 0;j--){
         delay(standardDelay);
         lcd.clear();
@@ -87,19 +100,5 @@ void loop() {
     }
     delay(standardDelay);
     lcd.clear();
-    count++;
-    startCycle = false;
-
-  } 
-  else if (!startCycle){
-    for(int i = 5; i>=0;i--){
-      delay(standardDelay);
-      lcd.clear();
-      lcd.print("Time Left: ");
-      lcd.print(i);
-    }
-    delay(standardDelay);
-    lcd.clear();
-    startCycle = true;
-  }
+    startCycle = cycle_;
 }
