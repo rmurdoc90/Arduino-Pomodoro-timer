@@ -1,11 +1,13 @@
 /*
 TODO LIST:
-- Implement a use for the passive buzzer module
-- Implement button to start the cycle
-- see about implementng the goat scream.
-- make function for time count downs
+- Implement a use for the passive buzzer module : done
+- Implement button to start the cycle : done
+- see about implementng the goat scream. : future changes
+- make function for time count downs : done
+- when put into production, make sure to change the global variable times.
 
-Last modifiied : 12/28/24
+Last modifiied : 12/29/24
+Version: 1.1
 Project: Building a pomodoro timer for the desk that uses the screaming goat sound when the 25 min timer goes off
 Tools/skills used:
 - CAD
@@ -15,43 +17,58 @@ Tools/skills used:
 - C/C++
 - Arduino IDE
 - 3d Printer
+- Cura Slicer
+
+wiring note:
+- LCD: SDA = A4 , SCL = A5
+- buzzer: 8
+- touch pad signal = 7
 
 List for MVP:
-- reset button for count, start/stop
-- 25 min timer then 5 min down time
-- After 4 cycles, do 25 min timer
-- count for pomodoros
-- built in clock of the time 
-- LCD display
-- display on top LCD what cycle currently in
+- reset button for count, start/stop - future changes
+- 25 min timer then 5 min down time - done
+- After 4 cycles, do 25 min break timer - done
+- count for pomodoros - done
+- built in clock of the time - nope 
+- LCD display - done
+- display on top LCD what cycle currently in - done
 */
 
 //Library imports
 #include <LiquidCrystal_I2C.h>
 
+// Function Headers
 void timerFunction(int, bool);
 
 // Global Constants
-const int pomoTimerMin = 24;
-const int pomoBreakMin = 4;
-const int standardDelay = 1000;
+const int pomoTimerMin = 0;
+const int pomoBreakMin = 0;
+const int standardDelay = 1000; // miliseconds
+const int buzzerPin = 8;
+const int buzzerMelody = 523;
+const int buttonPin = 7;
 
 // Global Varibles
-int count, flag; // Count for pomodoro along with display of count
-bool startCycle, goButton; // Logic control for which timer to set next
+int count, displayCount, cycleCount, break_, goButton; // Count for pomodoro along with display of count
+bool startCycle; // Logic control for which timer to set next
 char display1[3]; // Timer format varible
 char display2[3];
 LiquidCrystal_I2C lcd(0x27, 16, 2);  // Create an LCD object. The parameters are (I2C address, width, height).
- 
+
 
 void setup() {
   // Initializing global variables 
   count = 0; // set the initial count to 0.
-  flag = -1; // pomodoro count display flag
+  break_ = 0; // set the initial count to 0.
+  cycleCount = 0; // pomodoro count display flag
+  displayCount = -1; // pomodoro count display flag
   startCycle = true;
-  // goButton = false; // uncomment after setting up start button functionality
 
-  //TODO
+  //Buzzer initialization
+  pinMode(buzzerPin, OUTPUT);
+
+  //Button initialization
+  pinMode(buttonPin, INPUT);
 
   //LCD initialization
   lcd.begin();
@@ -63,42 +80,65 @@ void setup() {
 }
 
 void loop() {
+  // start of cycle button, currently a touch pad. 
+  goButton = digitalRead(buttonPin);
 
-  if(count != flag){
+  // After every cycle a display will show the currrent pomodoro count and the current break count
+  if(displayCount != cycleCount){
     lcd.print("Pomo count: " + String(count));
-    delay(standardDelay); // Remove after go button functionality added
-    flag = count;
+    lcd.setCursor(0,1);
+    lcd.print("Break count: " + String(break_));
+    displayCount = cycleCount;
   }
 
-  if(count==4){
-
-    timerFunction(pomoTimerMin, true);
-    count = 0;
-
-  } else if (startCycle){
-
-    timerFunction(pomoTimerMin, false);
-    count++;
-
-  } else {
-
-    timerFunction(pomoBreakMin, true);
-  
+  // Basic if else logic tree to set in motion the correct version of the timerFunction
+  if(goButton == 1){
+    if(break_==3 && count == 4){
+      timerFunction(pomoTimerMin, true);
+      count = 0;
+      break_ = 0;
+      cycleCount = 0;
+    } else if (startCycle){
+      timerFunction(pomoTimerMin, false);
+      count++;
+      cycleCount++;
+    } else {
+      timerFunction(pomoBreakMin, true);
+      break_++;
+      cycleCount++;
+    }
   }
 }  
 
+// Timer function
+// Requires a starter for the timer count down(int) and a boolean input to allow logic structure to change between 25 min timer
+// and a 5 min break timer.
+// Modifies the start cycle global boolean varible.
+// Has the output for lcd screen of the current cycle and a buzzer when the timer for the cycle ends
 void timerFunction(int timer_, bool cycle_){
   lcd.clear();
     for(int i = timer_; i>=0;i--){
-      for(int j = 59; j >= 0;j--){
+      for(int j = 5; j >= 0;j--){
         delay(standardDelay);
         lcd.clear();
         sprintf(display1, "%02d", i);
         sprintf(display2, "%02d", j);
         lcd.print("Time Left: " + String(display1) + ":" + String(display2));
+        lcd.setCursor(0, 1);
+        if(cycle_ == false){
+          lcd.print("Cycle: Pomo");
+        } else {
+          lcd.print("Cycle: Break");
+        }
       }
     }
     delay(standardDelay);
     lcd.clear();
     startCycle = cycle_;
+    for (int i = 0; i < 3; i++) {
+      tone(buzzerPin, buzzerMelody);
+      delay(500);
+      noTone(buzzerPin);
+      delay(50);
+    }
 }
