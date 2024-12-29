@@ -1,4 +1,11 @@
 /*
+TODO LIST:
+- Implement a use for the passive buzzer module
+- Implement button to start the cycle
+- see about implementng the goat scream.
+- make function for time count downs
+- 
+
 Last modifiied : 12/28/24
 Project: Building a pomodoro timer for the desk that uses the screaming goat sound when the 25 min timer goes off
 Tools/skills used:
@@ -21,25 +28,32 @@ List for MVP:
 */
 
 //Library imports
-#include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 
 // Global Constants
-const int pomoTimer = 25;
-const int pomoBreak = 5;
+const int pomoTimerMin = 24;
+const int pomoBreakMin = 4;
+const int pomoSecs = 59;
+const int standardDelay = 1000;
 
 // Global Varibles
-int count, flag;
-bool startButton, breakButton;
-
-// Create an LCD object. The parameters are (I2C address, width, height).
-LiquidCrystal_I2C lcd(0x27, 16, 2);  
+int count, flag; // Count for pomodoro along with display of count
+bool startCycle, goButton; // Logic control for which timer to set next
+char display1[3]; // Timer format varible
+char display2[3];
+LiquidCrystal_I2C lcd(0x27, 16, 2);  // Create an LCD object. The parameters are (I2C address, width, height).
+ 
 
 void setup() {
+  // Initializing global variables 
   count = 0; // set the initial count to 0.
-  flag = -1;
-  startButton = false;
-  breakButton = false; // set back to false when button functionatality is implemented
+  flag = -1; // pomodoro count display flag
+  startCycle = true;
+  // goButton = false; // uncomment after setting up start button functionality
+
+  //TODO
+
+  //LCD initialization
   lcd.begin();
   lcd.backlight();   // Turn on the backlight
   lcd.setCursor(0, 0); // Set the cursor to the first column of the first row
@@ -50,32 +64,42 @@ void setup() {
 
 void loop() {
 
+  digitalWrite(8, HIGH);
+  delay(standardDelay);
+  digitalWrite(8, LOW);
+
   if(count != flag){
-    lcd.print("Pomo count: ");
-    lcd.print(count);
+    lcd.print("Pomo count: " + String(count));
+    delay(standardDelay); // Remove after go button functionality added
     flag = count;
   }
 
-  if(startButton){
-    for(int i = 7; i>=0;i--){
-      delay(1000);
+  if(startCycle){
+    lcd.clear();
+    for(int i = 24; i>=0;i--){
+      for(int j = 59; j >= 0;j--){
+        delay(standardDelay);
+        lcd.clear();
+        sprintf(display1, "%02d", i);
+        sprintf(display2, "%02d", j);
+        lcd.print("Time Left: " + String(display1) + ":" + String(display2));
+      }
+    }
+    delay(standardDelay);
+    lcd.clear();
+    count++;
+    startCycle = false;
+
+  } 
+  else if (!startCycle){
+    for(int i = 5; i>=0;i--){
+      delay(standardDelay);
       lcd.clear();
       lcd.print("Time Left: ");
       lcd.print(i);
     }
-    delay(1000);
+    delay(standardDelay);
     lcd.clear();
-    count++;
-    // startButton = false; comented out for testing
-  } else if (breakButton){
-      for(int i = 5; i>=0;i--){
-        delay(1000);
-        lcd.clear();
-        lcd.print("Time Left: ");
-        lcd.print(i);
-      }
-      delay(1000);
-      lcd.clear();
+    startCycle = true;
   }
- 
 }
